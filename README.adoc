@@ -30,7 +30,6 @@ BUILDER_ARGS="build -x test"
 
 * First load all the needed resources in a project.
 
-TODO
 ----
 oc create -f https://raw.githubusercontent.com/cescoffier/vertx-s2i/master/vertx-s2i-all.json
 ----
