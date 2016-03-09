@@ -37,15 +37,6 @@
                   "ref": "master"
                }
             },
-            "strategy": {
-               "type": "Docker",
-               "dockerStrategy": {
-                  "from": {
-                     "kind": "ImageStreamTag",
-                     "name": "openshift/base-centos7"
-                  }
-               }
-            },
             "output": {
                "to": {
                   "kind": "ImageStreamTag",
