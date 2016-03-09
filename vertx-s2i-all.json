@@ -42,7 +42,7 @@
                "dockerStrategy": {
                   "from": {
                      "kind": "ImageStreamTag",
-                     "name": "centos:centos7"
+                     "name": "openshift/base-centos7"
                   }
                }
             },
@@ -53,16 +53,6 @@
                }
             },
             "resources": {}
-         }
-      },
-      {
-         "kind": "ImageStream",
-         "apiVersion": "v1",
-         "metadata": {
-            "name": "centos"
-         },
-         "spec": {
-            "dockerImageRepository": "library/centos:centos7"
          }
       },
       {
