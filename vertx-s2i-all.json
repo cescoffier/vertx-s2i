@@ -42,7 +42,7 @@
                "dockerStrategy": {
                   "from": {
                      "kind": "ImageStreamTag",
-                     "name": "openshift/base-centos7"
+                     "name": "centos:centos7"
                   }
                }
             },
