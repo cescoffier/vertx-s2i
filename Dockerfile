@@ -49,5 +49,4 @@ USER 1001
 EXPOSE 8080
 
 # Set the default CMD for the image
-# CMD ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/opt/openshift/app.jar"]
 CMD ["usage"]
