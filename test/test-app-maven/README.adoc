@@ -1,0 +1,15 @@
+== Sample Vert.x Hello World
+
+This sample application starts a HTTP server available on http://localhost:8080
+
+It can be built using maven:
+
+----
+mvn package
+----
+
+And run with:
+
+----
+java -jar [build/libs|target]/vertx-hello-world-fat.jar
+----
