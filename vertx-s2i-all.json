@@ -332,7 +332,7 @@
               "apiVersion" : "v1",
               "kind" : "Service",
               "metadata" : {
-                "name": "vertx-eventbus"
+                "name": "vertx-eventbus",
                 "labels" : {
                   "component" : "vertx-eventbus"
                 }
