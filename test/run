@@ -15,6 +15,7 @@ test_dir="$(dirname "${BASH_SOURCE[0]}")"
 image_dir="${test_dir}/.."
 scripts_url="file://${image_dir}/.sti/bin"
 cid_file=`mktemp -u -t '.cid'`
+sti_env=${STI_ENV-""}
 
 BUILDER=${BUILDER-maven}
 
@@ -34,7 +35,6 @@ container_exists() {
 }
 
 container_ip() {
-  echo "CID: `cat $cid_file`"
   echo `docker inspect --format="{{ .NetworkSettings.IPAddress }}" $(cat $cid_file)`
   docker inspect --format="{{ .NetworkSettings.IPAddress }}" $(cat $cid_file)
 }
@@ -48,7 +48,7 @@ docker_machine_port() {
 }
 
 run_sti_build() {
-  s2i build ${sti_args} file://${test_dir}/test-app-${BUILDER} ${IMAGE_NAME} ${IMAGE_NAME}-testapp-${BUILDER}
+  s2i build ${sti_args} ${sti_env} file://${test_dir}/test-app-${BUILDER} ${IMAGE_NAME} ${IMAGE_NAME}-testapp-${BUILDER}
 }
 
 prepare() {
@@ -112,7 +112,7 @@ wait_for_cid() {
 
 test_usage() {
   echo "Testing 'sti usage'..."
-  s2i usage ${sti_args} ${IMAGE_NAME} &>/dev/null
+  s2i usage ${sti_args} ${sti_env} ${IMAGE_NAME} &>/dev/null
 }
 
 test_connection() {
@@ -155,8 +155,6 @@ prepare
 run_sti_build
 echo "Testing build"
 check_result $?
-
-#echo "cid ${cid_file}"
 
 # Verify the 'usage' script is working properly
 echo "============> Test usage"

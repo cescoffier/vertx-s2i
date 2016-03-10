@@ -24,7 +24,7 @@ fi
 # cp -Rf /tmp/src/. ./
 #
 # echo "---> Building application from source"
-# # TODO: Add build steps for your application, eg npm install, bundle install
+#
 
 ##############################################################################
 
@@ -34,9 +34,6 @@ LOCAL_SOURCE_DIR=${HOME}/source
 mkdir -p $LOCAL_SOURCE_DIR
 
 DEPLOY_DIR=/opt/openshift
-
-# the subdirectory within LOCAL_SOURCE_DIR from where we should copy build artifacts
-ARTIFACT_DIR=${ARTIFACT_DIR-target}
 
 function copy_artifacts() {
   if [ -d $LOCAL_SOURCE_DIR/$1 ]; then
@@ -52,6 +49,15 @@ cp -ad /tmp/src/* $LOCAL_SOURCE_DIR
 # so run maven.
 if [ -f "$LOCAL_SOURCE_DIR/pom.xml" ]; then
   echo "Building with maven. $LOCAL_SOURCE_DIR/pom.xml found."
+
+	if [ -z "$OUTPUT_DIR" ]; then
+	  export OUTPUT_DIR="target"
+	elif [[ $OUTPUT_DIR != /* ]]; then
+	  export OUTPUT_DIR="$OUTPUT_DIR"
+	fi
+
+	echo "OUTPUT_DIR : ${OUTPUT_DIR}"
+
   pushd $LOCAL_SOURCE_DIR &> /dev/null
 
   if [ -z "$BUILDER_ARGS" ]; then
@@ -72,9 +78,9 @@ if [ -f "$LOCAL_SOURCE_DIR/pom.xml" ]; then
     exit $ERR
   fi
 
-  # Copy built artifacts (if any!) from the target/ directory
+  # Copy built artifacts (if any!) from the target (output dir) directory
   # to the $DEPLOY_DIR directory for later deployment
-  copy_artifacts target
+  copy_artifacts $OUTPUT_DIR
 
   # clean up after maven
   mvn clean
@@ -86,11 +92,16 @@ if [ -f "$LOCAL_SOURCE_DIR/pom.xml" ]; then
 elif [ -f "$LOCAL_SOURCE_DIR/build.gradle" ]; then
    echo "Building with gradle. $LOCAL_SOURCE_DIR/build.gradle found."
 
+	 if [ -z "$OUTPUT_DIR" ]; then
+ 	  export OUTPUT_DIR="build/libs"
+ 	elif [[ $OUTPUT_DIR != /* ]]; then
+ 	  export OUTPUT_DIR="$OUTPUT_DIR"
+ 	fi
+
    pushd $LOCAL_SOURCE_DIR &> /dev/null
 
   if [ -z "$BUILDER_ARGS" ]; then
-    export BUILDER_ARGS="build -x test"
-    # TODO: Specify setting file with -c sss
+    export BUILDER_ARGS="shadowJar -x test"
   fi
 
   echo "Found gradle.build ... attempting to build with 'gradle -s ${BUILDER_ARGS}'"
@@ -107,17 +118,15 @@ elif [ -f "$LOCAL_SOURCE_DIR/build.gradle" ]; then
     exit $ERR
   fi
 
-  # Copy built artifacts (if any!) from the target/ directory
+  # Copy built artifacts (if any!) from the build/libs (output dir) directory
   # to the $DEPLOY_DIR directory for later deployment
-  copy_artifacts build/libs
-
+  copy_artifacts $OUTPUT_DIR
 
   # clean up after maven
   gradle clean
-#  if [ -d "$HOME/.m2/repository" ]; then
-#    rm -r "$HOME/.m2/repository"
-#  fi
-
+  if [ -d "$HOME/.m2/repository" ]; then
+    rm -r "$HOME/.m2/repository"
+  fi
   popd &> /dev/null
 fi
 

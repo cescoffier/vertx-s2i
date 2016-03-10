@@ -7,6 +7,9 @@ Sample invocation:
 
 sti build git://<source code> vertx-sti <application image>
 
+To build it uses either Maven or Gradle. In both case the final jar should be a fat jar ending with "-fat.jar".
+Only this jar is copied to the output image.
+
 You can then run the resulting image via:
 docker run <application image>
 EOF
