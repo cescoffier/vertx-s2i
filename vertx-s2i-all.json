@@ -329,26 +329,27 @@
                }
             },
             {
-               "kind": "Service",
-               "apiVersion": "v1",
-               "metadata": {
-                  "name": "vertx-eventbus"
-               },
-               "spec": {
-                  "ports": [
-                     {
-                        "name": "vertx-eventbus",
-                        "port": 5701,
-                        "targetPort": 5701,
-                        "headless": true
-                     }
-                  ],
-                  "selector": {
-                     "deploymentconfig": "${APPLICATION_NAME}"
-                  },
-                  "type": "ClusterIP",
-                  "sessionAffinity": "None"
-               }
+              "apiVersion" : "v1",
+              "kind" : "Service",
+              "metadata" : {
+                "name": "vertx-eventbus"
+                "labels" : {
+                  "component" : "vertx-eventbus",
+                }
+              },
+              "spec" : {
+                "clusterIP" : "None",
+                "deprecatedPublicIPs" : [ ],
+                "externalIPs" : [ ],
+                "ports" : [ {
+                  "port" : 5701,
+                  "protocol" : "TCP",
+                  "targetPort" : 5701
+                } ],
+                "selector": {
+                   "deploymentconfig": "${APPLICATION_NAME}"
+                }
+              }
             }
          ]
       }

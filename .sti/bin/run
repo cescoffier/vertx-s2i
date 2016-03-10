@@ -8,4 +8,4 @@
 #
 
 cd /opt/openshift
-exec java -Dmaven.repo.local=$M2_LOCAL -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/./urandom -cp .:cluster.xml -jar vertx-app.jar -cluster $APP_OPTIONS
+exec java -Dmaven.repo.local=$M2_LOCAL -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/./urandom  -jar vertx-app.jar -cluster -cp .:./cluster.xml $APP_OPTIONS
