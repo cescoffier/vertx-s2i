@@ -315,6 +315,11 @@
                         "name": "${APPLICATION_NAME}-http",
                         "port": 8080,
                         "targetPort": 8080
+                     },
+                     {
+                        "name": "${APPLICATION_NAME}-eventbus",
+                        "port": 5701,
+                        "targetPort": 5701
                      }
                   ],
                   "selector": {

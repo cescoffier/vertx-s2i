@@ -32,12 +32,10 @@ LABEL io.k8s.description="Platform for building Vert.x applications with maven o
       io.openshift.expose-services="8080:http" \
       io.openshift.tags="builder,maven-3,gradle-2.8,vert.x"
 
-# TODO (optional): Copy the builder files into /opt/openshift
 # COPY ./<builder_folder>/ /opt/openshift/
-# COPY Additional files,configurations that we want to ship by default, like a default setting.xml
-
 LABEL io.openshift.s2i.scripts-url=image:///usr/local/sti
 COPY ./.sti/bin/ /usr/local/sti
+COPY ./conf/cluster.xml /opt/openshift
 
 RUN chown -R 1001:1001 /opt/openshift /opt/.m2
 RUN chmod -R go+rw /opt/openshift
@@ -45,8 +43,9 @@ RUN chmod -R go+rw /opt/openshift
 # This default user is created in the openshift/base-centos7 image
 USER 1001
 
-# Set the default port for applications built using this image
+# Set the default port for applications HTTP and event bus
 EXPOSE 8080
+EXPOSE 5701
 
 # Set the default CMD for the image
 CMD ["usage"]
