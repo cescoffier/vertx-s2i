@@ -308,6 +308,20 @@
                }
             },
             {
+               "kind": "Route",
+               "apiVersion": "v1",
+               "metadata": {
+                  "name": "vertx-eventbus"
+               },
+               "spec": {
+                  "host": "${APPLICATION_HOSTNAME}",
+                  "to": {
+                     "kind": "Service",
+                     "name": "vertx-eventbus"
+                  }
+               }
+            },
+            {
                "kind": "Service",
                "apiVersion": "v1",
                "metadata": {

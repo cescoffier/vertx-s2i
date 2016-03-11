@@ -1,15 +1,19 @@
 == OpenShift S2I Builder for Vert.x
+
 This Source-to-Image Builder let's you create projects using Vert.x 3 and built with:
 
 * maven
 * gradle
+
+This builder expect the build process to generate a (unique) "fat" jar (with a file ending with `-fat.jar`).
 
 NOTE: If a project has a pom.xml and a build.gradle, maven will take precedence
 
 == ENV Options
 
 * *BUILDER_ARGS*: Allows you to specify options to pass to maven or gradle
-
+* *OUTPUT_DIR*: The directory where the "fat-jar" is located. It can be adjusted
+when building a multi-module projects.
 
 == Defaults
 If you do not specify any BUILDER_ARGS, by default the s2i image will use the following:
@@ -18,12 +22,14 @@ If you do not specify any BUILDER_ARGS, by default the s2i image will use the fo
 
 ----
 BUILDER_ARGS="package -Popenshift -DskipTests"
+OUTPUT_DIR=target
 ----
 
 * Gradle
 
 ----
 BUILDER_ARGS="build -x test"
+OUTPUT_DIR=build/libs
 ----
 
 == Test in OpenShift
@@ -38,3 +44,18 @@ oc create -f https://raw.githubusercontent.com/cescoffier/vertx-s2i/master/vertx
 
 ** Instant app already provided as template
 ** Using the vertx-s2i builder image using a regular Git repository
+
+== Application configuration
+
+* *APP_OPTIONS*: let you pass options to the application, such as `-cluster -cp ./cluster.xml`...
+
+== Additional files
+
+This S2I builds the fat jar of your application, but also let you copy additional files. You can use this feature to copy configuration files (`cluster.xml`, json files). These files are copied in the deploy directory (`/opt/openshift`) and are copied from:
+
+* `./src/env`
+* `OUTPUT_DIR/env`
+
+The first location is used for mono-module project and files that does not require processing (at built time). The second location is used for multi-module projects, or for files having being processed during the packaging (filtering, computation...).
+
+Be aware that in the second case you would need to configure your build process to copy the files to the right location.
