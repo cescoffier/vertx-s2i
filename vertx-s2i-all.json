@@ -308,20 +308,6 @@
                }
             },
             {
-               "kind": "Route",
-               "apiVersion": "v1",
-               "metadata": {
-                  "name": "vertx-eventbus"
-               },
-               "spec": {
-                  "host": "${APPLICATION_HOSTNAME}",
-                  "to": {
-                     "kind": "Service",
-                     "name": "vertx-eventbus"
-                  }
-               }
-            },
-            {
                "kind": "Service",
                "apiVersion": "v1",
                "metadata": {
@@ -330,7 +316,7 @@
                "spec": {
                   "ports": [
                      {
-                        "name": "${APPLICATION_NAME}-http",
+                        "name": "${APPLICATION_NAME}",
                         "port": 8080,
                         "targetPort": 8080
                      }
@@ -341,27 +327,6 @@
                   "type": "ClusterIP",
                   "sessionAffinity": "None"
                }
-            },
-            {
-              "apiVersion" : "v1",
-              "kind" : "Service",
-              "metadata" : {
-                "name": "vertx-eventbus",
-                "labels" : {
-                  "component" : "vertx-eventbus"
-                }
-              },
-              "spec" : {
-                "clusterIP" : "None",
-                "ports" : [ {
-                  "port" : 5701,
-                  "protocol" : "TCP",
-                  "targetPort" : 5701
-                } ],
-                "selector": {
-                   "deploymentconfig": "${APPLICATION_NAME}"
-                }
-              }
             }
          ]
       }

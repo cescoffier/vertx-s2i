@@ -49,6 +49,12 @@ oc create -f https://raw.githubusercontent.com/cescoffier/vertx-s2i/master/vertx
 
 * *APP_OPTIONS*: let you pass options to the application, such as `-cluster -cp ./cluster.xml`...
 
+`APP_OPTIONS` are set using a `.s2i/environment` file in your source code:
+
+----
+APP_OPTIONS=-cluster -cp .:./cluster.xml
+----
+
 == Additional files
 
 This S2I builds the fat jar of your application, but also let you copy additional files. You can use this feature to copy configuration files (`cluster.xml`, json files). These files are copied in the deploy directory (`/opt/openshift`) and are copied from:
@@ -59,3 +65,168 @@ This S2I builds the fat jar of your application, but also let you copy additiona
 The first location is used for mono-module project and files that does not require processing (at built time). The second location is used for multi-module projects, or for files having being processed during the packaging (filtering, computation...).
 
 Be aware that in the second case you would need to configure your build process to copy the files to the right location.
+
+== Clustered Vert.x application
+
+To run clustered vert.x applications (with Hazelcast), you would need:
+
+1. some dependencies in your build descriptor to use the Hazelcast-Kubernates discovery
+2. a specific service for the event bus
+3. a specific cluster configuration
+4. set `APP_OPTIONS` to use this specific cluster configuration
+
+=== 1) Using Hazelcast kubernates discovery
+
+Hazelcast 3.6+ propose a SPI to extend / customize the cluster member discovery. They provide a discovery extension for Kubernates. To use it, you need to add the related artifact in your build descriptor. For Maven, do it as follows:
+
+[source, xml]
+----
+<dependency>
+  <groupId>com.hazelcast</groupId>
+  <artifactId>hazelcast</artifactId>
+  <version>3.6.1</version>
+</dependency>
+<dependency>
+  <groupId>io.vertx</groupId>
+  <artifactId>vertx-hazelcast</artifactId>
+</dependency>
+<dependency>
+  <groupId>com.noctarius.discovery</groupId>
+  <artifactId>hazelcast-kubernetes-discovery</artifactId>
+  <version>0.9.2</version>
+</dependency>
+----
+
+You should update the version numbers to _latest_.
+
+When the application is packaged (as a fat jar), it embeds the kubernates discovery.
+
+=== 2) The vertx-eventbus service
+
+To work, the hazelcast-kubernetes-discovery needs a known `service`. Let's call this service `vertx-eventbus`. In a Openshift template (used to deploy a vert.x application), add:
+
+[source, javascript]
+----
+{
+   "kind" : "Service",
+   "apiVersion" : "v1",
+   "metadata" : {
+     "name": "vertx-eventbus",
+     "labels" : {
+       "component" : "vertx-eventbus"
+     }
+   },
+   "spec" : {
+     "clusterIP" : "None",
+     "ports" : [ {
+       "port" : 5701,
+       "protocol" : "TCP",
+       "targetPort" : 5701
+     } ],
+     "selector": {
+       "deploymentconfig": "YOUR_APPLICATION_NAME"
+     }
+  }
+}
+----
+
+This service is _headless_. Your container should also declare the port 5701. For example:
+
+[source, javascript]
+----
+"ports": [
+  {
+    "containerPort": 8080,
+    "protocol": "TCP"
+  },
+  {
+    "containerPort" : 5701,
+    "protocol" : "TCP"
+  }
+],
+----
+
+**IMPORTANT**: do not use the port 5701 for liveness.
+
+Only **one** of your application would publish this service in a given namespace / project.
+
+=== 3) Hazelcast configuration
+
+Your vert.x application needs to use specific `cluster.xml` file. Create in the `src/env` directory, a `cluster.xml` file with the following content:
+
+[source, xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <properties>
+    <property name="hazelcast.mancenter.enabled">false</property>
+    <property name="hazelcast.memcache.enabled">false</property>
+    <property name="hazelcast.rest.enabled">false</property>
+    <property name="hazelcast.wait.seconds.before.join">0</property>
+    <property name="hazelcast.logging.type">jdk</property>
+
+    <!-- at the moment the discovery needs to be activated explicitly -->
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
+  <network>
+    <port auto-increment="true" port-count="10000">5701</port>
+    <outbound-ports>
+      <ports>0</ports>
+    </outbound-ports>
+    <join>
+      <multicast enabled="false"/>
+
+      <tcp-ip enabled="false"/>
+      <discovery-strategies>
+        <discovery-strategy enabled="true"
+                                class="com.noctarius.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+          <properties>
+            <!-- configure discovery headless service lookup -->
+            <property name="service-dns">vertx-eventbus.vertx-demo-cluster.svc.cluster.local</property>
+          </properties>
+        </discovery-strategy>
+      </discovery-strategies>
+    </join>
+    <interfaces enabled="false">
+      <interface>10.10.1.*</interface>
+    </interfaces>
+    <ssl enabled="false"/>
+    <socket-interceptor enabled="false"/>
+  </network>
+  <partition-group enabled="false"/>
+  <executor-service name="default">
+    <pool-size>16</pool-size>
+    <queue-capacity>0</queue-capacity>
+  </executor-service>
+  <map name="__vertx.subs">
+    <backup-count>1</backup-count>
+    <time-to-live-seconds>0</time-to-live-seconds>
+    <max-idle-seconds>0</max-idle-seconds>
+    <eviction-policy>NONE</eviction-policy>
+    <max-size policy="PER_NODE">0</max-size>
+    <eviction-percentage>25</eviction-percentage>
+    <merge-policy>com.hazelcast.map.merge.LatestUpdateMapMergePolicy</merge-policy>
+  </map>
+  <semaphore name="__vertx.*">
+    <initial-permits>1</initial-permits>
+  </semaphore>
+</hazelcast>
+----
+
+You need to edit the `service-dns` property value. The value is computed as follows:
+`service-name (vertx-eventbus).project name.svc.cluster.local`.
+
+This `cluster.xml` file will be placed in the same directory as your application. The source to image is copying the file there.
+
+=== 4) Set the application options
+
+Create a `.s2i/environment` file with the following content:
+
+----
+APP_OPTIONS=-cluster -cp .:./cluster.xml
+----
+
+Here you go, your application is now distributed, and you can use the event bus to send and receive events between nodes.
