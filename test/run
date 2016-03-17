@@ -14,7 +14,7 @@ IMAGE_NAME=${IMAGE_NAME-vertx-s2i-candidate}
 test_dir="$(dirname "${BASH_SOURCE[0]}")"
 image_dir="${test_dir}/.."
 scripts_url="file://${image_dir}/.sti/bin"
-cid_file=`mktemp -u -t '.cid'`
+cid_file=`mktemp -u`
 sti_env=${STI_ENV-""}
 
 BUILDER=${BUILDER-maven}
